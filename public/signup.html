@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up - Real Estate Platform</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px 0;
+    }
+    .signup-container {
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    .signup-form {
+      padding: 40px;
+    }
+    .form-control {
+      border-radius: 10px;
+      border: 2px solid #e9ecef;
+      padding: 12px 15px;
+    }
+    .form-control:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    .btn-signup {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      border-radius: 10px;
+      padding: 12px;
+      font-weight: 600;
+    }
+    .step-indicator {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 30px;
+    }
+    .step {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #e9ecef;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 10px;
+      font-weight: bold;
+      color: #6c757d;
+    }
+    .step.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .step.completed {
+      background: #28a745;
+      color: white;
+    }
+    .step-connector {
+      width: 50px;
+      height: 2px;
+      background: #e9ecef;
+      margin-top: 19px;
+    }
+    .step-connector.active {
+      background: #28a745;
+    }
+    @media (max-width: 768px) {
+      .signup-form {
+        padding: 20px;
+      }
+      .step-indicator {
+        overflow-x: auto;
+        padding-bottom: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <div class="signup-container">
+          <div class="signup-form">
+            <div class="text-center mb-4">
+              <h2 class="fw-bold">Create Your Account</h2>
+              <p class="text-muted">Join our real estate platform today</p>
+            </div>
+            
+            <!-- Step Indicator -->
+            <div class="step-indicator">
+              <div class="step active" id="step1">1</div>
+              <div class="step-connector"></div>
+              <div class="step" id="step2">2</div>
+            </div>
+            
+            <div id="alertContainer"></div>
+            
+            <!-- Step 1: Registration Form -->
+            <div id="registrationForm">
+              <form id="signupForm">
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label for="name" class="form-label">
+                      <i class="fas fa-user me-2"></i>Full Name
+                    </label>
+                    <input type="text" class="form-control" id="name" required>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label for="userId" class="form-label">
+                      <i class="fas fa-id-card me-2"></i>User ID
+                    </label>
+                    <input type="text" class="form-control" id="userId" required>
+                  </div>
+                </div>
+                
+                <div class="mb-3">
+                  <label for="email" class="form-label">
+                    <i class="fas fa-envelope me-2"></i>Email Address
+                  </label>
+                  <input type="email" class="form-control" id="email" required>
+                </div>
+                
+                <div class="mb-3">
+                  <label for="password" class="form-label">
+                    <i class="fas fa-lock me-2"></i>Password
+                  </label>
+                  <div class="input-group">
+                    <input type="password" class="form-control" id="password" required>
+                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                      <i class="fas fa-eye"></i>
+                    </button>
+                  </div>
+                  <div class="form-text">Password must be at least 6 characters long.</div>
+                </div>
+                
+                <div class="mb-3">
+                  <label for="confirmPassword" class="form-label">
+                    <i class="fas fa-lock me-2"></i>Confirm Password
+                  </label>
+                  <input type="password" class="form-control" id="confirmPassword" required>
+                </div>
+                
+                <div class="mb-3">
+                  <label for="address" class="form-label">
+                    <i class="fas fa-map-marker-alt me-2"></i>Address
+                  </label>
+                  <textarea class="form-control" id="address" rows="3" required></textarea>
+                </div>
+                
+                <div class="mb-4">
+                  <label for="contactDetails" class="form-label">
+                    <i class="fas fa-phone me-2"></i>Contact Details
+                  </label>
+                  <input type="tel" class="form-control" id="contactDetails" required>
+                </div>
+                
+                <button type="submit" class="btn btn-signup btn-primary w-100 mb-3">
+                  <i class="fas fa-user-plus me-2"></i>Create Account
+                </button>
+                
+                <div class="text-center">
+                  <p class="mb-0">Already have an account? 
+                    <a href="/login" class="text-primary text-decoration-none fw-bold">Sign in here</a>
+                  </p>
+                  <a href="/" class="text-muted text-decoration-none mt-2 d-block">
+                    <i class="fas fa-home me-1"></i>Back to Home
+                  </a>
+                </div>
+              </form>
+            </div>
+            
+            <!-- Step 2: OTP Verification -->
+            <div id="otpForm" style="display: none;">
+              <div class="text-center mb-4">
+                <i class="fas fa-envelope-open-text display-4 text-primary mb-3"></i>
+                <h4>Verify Your Email</h4>
+                <p class="text-muted">We've sent a 6-digit OTP to your email address.</p>
+              </div>
+              
+              <form id="verifyOtpForm">
+                <div class="mb-4">
+                  <label for="otp" class="form-label text-center d-block">
+                    <i class="fas fa-key me-2"></i>Enter OTP
+                  </label>
+                  <input type="text" class="form-control text-center" id="otp" maxlength="6" required 
+                         style="font-size: 1.5rem; letter-spacing: 0.5rem;">
+                  <div class="form-text text-center">Enter the 6-digit code sent to your email</div>
+                </div>
+                
+                <button type="submit" class="btn btn-signup btn-primary w-100 mb-3">
+                  <i class="fas fa-check me-2"></i>Verify Email
+                </button>
+                
+                <div class="text-center">
+                  <button type="button" class="btn btn-link" id="resendOtp">
+                    <i class="fas fa-redo me-1"></i>Resend OTP
+                  </button>
+                </div>
+              </form>
+            </div>
+            
+            <!-- Step 3: Success -->
+            <div id="successMessage" style="display: none;">
+              <div class="text-center">
+                <i class="fas fa-check-circle display-1 text-success mb-4"></i>
+                <h3>Account Created Successfully!</h3>
+                <p class="text-muted mb-4">Your email has been verified. You can now log in to your account.</p>
+                <a href="/login" class="btn btn-signup btn-primary btn-lg">
+                  <i class="fas fa-sign-in-alt me-2"></i>Login Now
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    let userEmail = '';
+    
+    // Show alert
+    function showAlert(message, type = 'danger') {
+      const alertContainer = document.getElementById('alertContainer');
+      alertContainer.innerHTML = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+          ${message}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      `;
+    }
+    
+    // Update step indicator
+    function updateStepIndicator(currentStep) {
+      document.querySelectorAll('.step').forEach((step, index) => {
+        step.classList.remove('active', 'completed');
+        if (index + 1 < currentStep) {
+          step.classList.add('completed');
+        } else if (index + 1 === currentStep) {
+          step.classList.add('active');
+        }
+      });
+    }
+    
+    // Toggle password visibility
+    document.getElementById('togglePassword').addEventListener('click', function() {
+      const passwordField = document.getElementById('password');
+      const icon = this.querySelector('i');
+      
+      if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+      } else {
+        passwordField.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+      }
+    });
+    
+    // Handle registration form submission
+    document.getElementById('signupForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      
+      if (password !== confirmPassword) {
+        showAlert('Passwords do not match.');
+        return;
+      }
+      
+      if (password.length < 6) {
+        showAlert('Password must be at least 6 characters long.');
+        return;
+      }
+      
+      const formData = {
+        name: document.getElementById('name').value,
+        userId: document.getElementById('userId').value,
+        email: document.getElementById('email').value,
+        password: password,
+        address: document.getElementById('address').value,
+        contactDetails: document.getElementById('contactDetails').value
+      };
+      
+      try {
+        const response = await fetch('/api/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(formData)
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          userEmail = formData.email;
+          showAlert('Registration successful! Please check your email for OTP.', 'success');
+          
+          // Switch to OTP form
+          setTimeout(() => {
+            document.getElementById('registrationForm').style.display = 'none';
+            document.getElementById('otpForm').style.display = 'block';
+            updateStepIndicator(2);
+          }, 2000);
+        } else {
+          showAlert(data.error);
+        }
+      } catch (error) {
+        console.error('Registration error:', error);
+        showAlert('Registration failed. Please try again.');
+      }
+    });
+    
+    // Handle OTP verification
+    document.getElementById('verifyOtpForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const otp = document.getElementById('otp').value;
+      
+      if (otp.length !== 6) {
+        showAlert('Please enter a valid 6-digit OTP.');
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/verify-otp', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email: userEmail, otp })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          showAlert('Email verified successfully!', 'success');
+          
+          // Switch to success message
+          setTimeout(() => {
+            document.getElementById('otpForm').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'block';
+          }, 2000);
+        } else {
+          showAlert(data.error);
+          document.getElementById('otp').value = '';
+        }
+      } catch (error) {
+        console.error('OTP verification error:', error);
+        showAlert('Verification failed. Please try again.');
+        document.getElementById('otp').value = '';
+      }
+    });
+    
+    // Resend OTP
+    document.getElementById('resendOtp').addEventListener('click', async function() {
+      // Note: You would need to implement a resend OTP endpoint
+      showAlert('OTP resent to your email address.', 'info');
+    });
+    
+    // OTP input formatting
+    document.getElementById('otp').addEventListener('input', function(e) {
+      e.target.value = e.target.value.replace(/[^0-9]/g, '');
+    });
+  </script>
+</body>
+</html>

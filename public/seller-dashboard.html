@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Seller Dashboard - Real Estate Platform</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --primary-color: #28a745;
+        --secondary-color: #6c757d;
+        --success-color: #28a745;
+        --danger-color: #dc3545;
+        --warning-color: #ffc107;
+        --info-color: #17a2b8;
+        --light-color: #f8f9fa;
+        --dark-color: #343a40;
+      }
+
+      body {
+        background-color: #f8f9fa;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      .sidebar {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        min-height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 250px;
+        z-index: 1000;
+      }
+
+      .sidebar .nav-link {
+        color: rgba(255, 255, 255, 0.8);
+        padding: 15px 20px;
+        border-radius: 0;
+        transition: all 0.3s ease;
+      }
+
+      .sidebar .nav-link:hover,
+      .sidebar .nav-link.active {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: white;
+      }
+
+      .main-content {
+        margin-left: 250px;
+        padding: 20px;
+      }
+
+      .card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+      }
+
+      .card:hover {
+        transform: translateY(-5px);
+      }
+
+      .stats-card {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+      }
+
+      .property-card {
+        transition: all 0.3s ease;
+        position: relative;
+      }
+
+      .property-actions {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+      }
+
+      .avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 24px;
+        font-weight: bold;
+      }
+
+      .btn-gradient {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+        color: white;
+        transition: all 0.3s ease;
+      }
+
+      .btn-gradient:hover {
+        background: linear-gradient(135deg, #20c997 0%, #28a745 100%);
+        color: white;
+      }
+
+      .customer-card {
+        border-left: 4px solid #28a745;
+      }
+
+      .enquiry-card {
+        border-left: 4px solid #17a2b8;
+      }
+
+      .ai-response {
+        background: linear-gradient(135deg, #17a2b8 0%, #007bff 100%);
+        color: white;
+        padding: 10px;
+        border-radius: 8px;
+        margin-top: 5px;
+      }
+
+      @media (max-width: 768px) {
+        .sidebar {
+          width: 100%;
+          position: relative;
+          min-height: auto;
+        }
+
+        .main-content {
+          margin-left: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Sidebar -->
+    <nav class="sidebar">
+      <div class="text-center py-4">
+        <div class="avatar mb-3">
+          <span id="user-avatar">S</span>
+        </div>
+        <h5 class="text-white mb-0">
+          Welcome, <span id="user-name">Seller</span>
+        </h5>
+      </div>
+
+      <ul class="nav flex-column">
+        <li class="nav-item">
+          <a class="nav-link active" href="#" onclick="showSection('overview')">
+            <i class="fas fa-tachometer-alt me-2"></i> Overview
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" onclick="showSection('properties')">
+            <i class="fas fa-home me-2"></i> My Properties
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" onclick="showSection('add-property')">
+            <i class="fas fa-plus me-2"></i> Add Property
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" onclick="showSection('inquiries')">
+            <i class="fas fa-question-circle me-2"></i> Customer Inquiries
+          </a>
+        </li>
+        <li class="nav-item">
+          <a
+            class="nav-link"
+            href="#"
+            onclick="showSection('interested-buyers')"
+          >
+            <i class="fas fa-users me-2"></i> Interested Buyers
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" onclick="logout()">
+            <i class="fas fa-sign-out-alt me-2"></i> Logout
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Overview Section -->
+      <div id="overview-section" class="content-section">
+        <div class="row mb-4">
+          <div class="col-md-3">
+            <div class="card stats-card">
+              <div class="card-body text-center">
+                <i class="fas fa-home fa-2x mb-3"></i>
+                <h3 id="total-properties">0</h3>
+                <p class="mb-0">My Properties</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card stats-card">
+              <div class="card-body text-center">
+                <i class="fas fa-question-circle fa-2x mb-3"></i>
+                <h3 id="total-inquiries">0</h3>
+                <p class="mb-0">Total Inquiries</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card stats-card">
+              <div class="card-body text-center">
+                <i class="fas fa-users fa-2x mb-3"></i>
+                <h3 id="interested-buyers-count">0</h3>
+                <p class="mb-0">Interested Buyers</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card stats-card">
+              <div class="card-body text-center">
+                <i class="fas fa-dollar-sign fa-2x mb-3"></i>
+                <h3 id="avg-property-value">$0</h3>
+                <p class="mb-0">Avg. Property Value</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h5><i class="fas fa-chart-line me-2"></i>Recent Activity</h5>
+          </div>
+          <div class="card-body">
+            <div id="recent-activity">
+              <p class="text-muted">Loading recent activity...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- My Properties Section -->
+      <div
+        id="properties-section"
+        class="content-section"
+        style="display: none"
+      >
+        <div class="card">
+          <div
+            class="card-header d-flex justify-content-between align-items-center"
+          >
+            <h5><i class="fas fa-home me-2"></i>My Properties</h5>
+            <button
+              class="btn btn-gradient"
+              onclick="showSection('add-property')"
+            >
+              <i class="fas fa-plus me-1"></i> Add New Property
+            </button>
+          </div>
+          <div class="card-body">
+            <div id="properties-container">
+              <p class="text-muted">Loading properties...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Property Section -->
+      <div
+        id="add-property-section"
+        class="content-section"
+        style="display: none"
+      >
+        <div class="card">
+          <div class="card-header">
+            <h5><i class="fas fa-plus me-2"></i>Add New Property</h5>
+          </div>
+          <div class="card-body">
+            <form id="property-form" enctype="multipart/form-data">
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label class="form-label">Property Title</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="title"
+                      required
+                    />
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label class="form-label">Price (₹)</label>
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="price"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Description</label>
+                <textarea
+                  class="form-control"
+                  id="description"
+                  rows="4"
+                  required
+                ></textarea>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Physical Address</label>
+                <textarea
+                  class="form-control"
+                  id="physicalAddress"
+                  rows="2"
+                  required
+                ></textarea>
+              </div>
+
+              <div class="row">
+                <div class="col-md-4">
+                  <div class="mb-3">
+                    <label class="form-label">Latitude</label>
+                    <input
+                      type="number"
+                      step="any"
+                      class="form-control"
+                      id="latitude"
+                      required
+                    />
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="mb-3">
+                    <label class="form-label">Longitude</label>
+                    <input
+                      type="number"
+                      step="any"
+                      class="form-control"
+                      id="longitude"
+                      required
+                    />
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="mb-3">
+                    <label class="form-label">&nbsp;</label>
+                    <button
+                      type="button"
+                      class="btn btn-outline-secondary w-100"
+                      onclick="getCurrentLocation()"
+                    >
+                      <i class="fas fa-location-arrow me-1"></i> Get Current
+                      Location
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Google Maps Address</label>
+                <input type="text" class="form-control" id="mapAddress" />
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Property Images</label>
+                <input
+                  type="file"
+                  class="form-control"
+                  id="images"
+                  multiple
+                  accept="image/*"
+                  required
+                />
+                <div class="form-text">
+                  Select multiple images (max 10 files, 10MB each)
+                </div>
+              </div>
+
+              <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-gradient">
+                  <i class="fas fa-save me-1"></i> Add Property
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary"
+                  onclick="resetForm()"
+                >
+                  <i class="fas fa-redo me-1"></i> Reset Form
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Customer Inquiries Section -->
+      <div id="inquiries-section" class="content-section" style="display: none">
+        <div class="card">
+          <div class="card-header">
+            <h5>
+              <i class="fas fa-question-circle me-2"></i>Customer Inquiries
+            </h5>
+          </div>
+          <div class="card-body">
+            <div id="inquiries-container">
+              <p class="text-muted">Loading inquiries...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Interested Buyers Section -->
+      <div
+        id="interested-buyers-section"
+        class="content-section"
+        style="display: none"
+      >
+        <div class="card">
+          <div class="card-header">
+            <h5><i class="fas fa-users me-2"></i>Interested Buyers</h5>
+          </div>
+          <div class="card-body">
+            <div id="interested-buyers-container">
+              <p class="text-muted">Loading interested buyers...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Confirm Delete</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <p>
+              Are you sure you want to delete this property? This action cannot
+              be undone.
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="btn btn-danger"
+              id="confirm-delete-btn"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      let currentUser = null;
+      let properties = [];
+      let propertyToDelete = null;
+
+      // Load data on page load
+      document.addEventListener("DOMContentLoaded", function () {
+        loadUserData();
+        loadSellerProperties();
+      });
+
+      function showSection(sectionName) {
+        // Hide all sections
+        document.querySelectorAll(".content-section").forEach((section) => {
+          section.style.display = "none";
+        });
+
+        // Remove active class from all nav links
+        document.querySelectorAll(".nav-link").forEach((link) => {
+          link.classList.remove("active");
+        });
+
+        // Show selected section
+        document.getElementById(sectionName + "-section").style.display =
+          "block";
+
+        // Add active class to clicked nav link
+        event.target.classList.add("active");
+
+        // Load section-specific data
+        switch (sectionName) {
+          case "properties":
+            loadSellerProperties();
+            break;
+          case "inquiries":
+            loadInquiries();
+            break;
+          case "interested-buyers":
+            loadInterestedBuyers();
+            break;
+        }
+      }
+
+      async function loadUserData() {
+        try {
+          // Get current user from session (you might need to add an endpoint for this)
+          // For now, we'll use a placeholder
+          currentUser = { name: "Seller User" };
+          document.getElementById("user-name").textContent = currentUser.name;
+          document.getElementById("user-avatar").textContent = currentUser.name
+            .charAt(0)
+            .toUpperCase();
+        } catch (error) {
+          console.error("Error loading user data:", error);
+        }
+      }
+
+      async function loadSellerProperties() {
+        try {
+          const response = await fetch("/api/seller/properties");
+          if (response.ok) {
+            properties = await response.json();
+            updateDashboardStats();
+            displayProperties();
+          } else {
+            console.error("Failed to load properties");
+          }
+        } catch (error) {
+          console.error("Error loading properties:", error);
+        }
+      }
+
+      function updateDashboardStats() {
+        document.getElementById("total-properties").textContent =
+          properties.length;
+
+        let totalInquiries = 0;
+        let totalInterestedBuyers = 0;
+        let totalValue = 0;
+
+        properties.forEach((property) => {
+          totalInquiries += property.questions.length;
+          totalInterestedBuyers += property.interestedBuyers.length;
+          totalValue += property.price;
+        });
+
+        document.getElementById("total-inquiries").textContent = totalInquiries;
+        document.getElementById("interested-buyers-count").textContent =
+          totalInterestedBuyers;
+
+        const avgValue =
+          properties.length > 0 ? totalValue / properties.length : 0;
+        document.getElementById("avg-property-value").textContent =
+          "$" + Math.round(avgValue).toLocaleString();
+      }
+
+      function displayProperties() {
+        const container = document.getElementById("properties-container");
+        if (properties.length === 0) {
+          container.innerHTML =
+            '<p class="text-muted">You haven\'t added any properties yet. <a href="#" onclick="showSection(\'add-property\')">Add your first property</a></p>';
+          return;
+        }
+
+        let html = '<div class="row">';
+        properties.forEach((property) => {
+          html += `
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card property-card h-100">
+                            <div class="property-actions">
+                                <button class="btn btn-sm btn-danger" onclick="confirmDelete('${
+                                  property._id
+                                }')" title="Delete Property">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            <img src="/${
+                              property.images[0]
+                            }" class="card-img-top" style="height: 200px; object-fit: cover;" alt="Property Image">
+                            <div class="card-body">
+                                <h6 class="card-title">${property.title}</h6>
+                                <p class="card-text text-success fw-bold">₹${property.price.toLocaleString()}</p>
+                                <p class="card-text">${property.description.substring(
+                                  0,
+                                  100
+                                )}...</p>
+                                <p class="card-text"><small class="text-muted">${
+                                  property.physicalAddress
+                                }</small></p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">${new Date(
+                                      property.createdAt
+                                    ).toLocaleDateString()}</small>
+                                    <div>
+                                        <span class="badge bg-primary me-1">${
+                                          property.questions.length
+                                        } Q&A</span>
+                                        <span class="badge bg-success">${
+                                          property.interestedBuyers.length
+                                        } Interested</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+        });
+        html += "</div>";
+        container.innerHTML = html;
+      }
+
+      function loadInquiries() {
+        const container = document.getElementById("inquiries-container");
+        let inquiries = [];
+
+        properties.forEach((property) => {
+          property.questions.forEach((question) => {
+            inquiries.push({
+              ...question,
+              propertyTitle: property.title,
+              propertyId: property._id,
+            });
+          });
+        });
+
+        if (inquiries.length === 0) {
+          container.innerHTML =
+            '<p class="text-muted">No customer inquiries yet.</p>';
+          return;
+        }
+
+        // Sort by timestamp (newest first)
+        inquiries.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        let html = "";
+        inquiries.forEach((inquiry) => {
+          html += `
+                    <div class="card enquiry-card mb-3">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-0">${inquiry.propertyTitle}</h6>
+                                <small class="text-muted">Customer: ${
+                                  inquiry.customerId.name
+                                } (${inquiry.customerId.email})</small>
+                            </div>
+                            <small class="text-muted">${new Date(
+                              inquiry.timestamp
+                            ).toLocaleDateString()}</small>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Question:</strong> ${
+                              inquiry.question
+                            }</p>
+                            <div class="ai-response">
+                                <strong>AI Response:</strong><br>
+                                ${inquiry.aiResponse}
+                            </div>
+                            <div class="mt-3">
+                                <strong>Customer Contact:</strong><br>
+                                <small>Phone: ${
+                                  inquiry.customerId.contactDetails ||
+                                  "Not provided"
+                                }</small><br>
+                                <small>Address: ${
+                                  inquiry.customerId.address || "Not provided"
+                                }</small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+        });
+        container.innerHTML = html;
+      }
+
+      function loadInterestedBuyers() {
+        const container = document.getElementById(
+          "interested-buyers-container"
+        );
+        let interestedBuyers = [];
+
+        properties.forEach((property) => {
+          property.interestedBuyers.forEach((buyer) => {
+            interestedBuyers.push({
+              ...buyer,
+              propertyTitle: property.title,
+              propertyId: property._id,
+              propertyPrice: property.price,
+            });
+          });
+        });
+
+        if (interestedBuyers.length === 0) {
+          container.innerHTML =
+            '<p class="text-muted">No interested buyers yet.</p>';
+          return;
+        }
+
+        // Sort by timestamp (newest first)
+        interestedBuyers.sort(
+          (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+        );
+
+        let html = "";
+        interestedBuyers.forEach((buyer) => {
+          html += `
+                    <div class="card customer-card mb-3">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-0">${buyer.propertyTitle}</h6>
+                                <small class="text-success">₹${buyer.propertyPrice.toLocaleString()}</small>
+                            </div>
+                            <small class="text-muted">${new Date(
+                              buyer.timestamp
+                            ).toLocaleDateString()}</small>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Customer Name:</strong> ${
+                                      buyer.customerId.name
+                                    }</p>
+                                    <p><strong>Email:</strong> ${
+                                      buyer.customerId.email
+                                    }</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Contact:</strong> ${
+                                      buyer.customerId.contactDetails ||
+                                      "Not provided"
+                                    }</p>
+                                    <p><strong>Address:</strong> ${
+                                      buyer.customerId.address || "Not provided"
+                                    }</p>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <a href="mailto:${
+                                  buyer.customerId.email
+                                }" class="btn btn-sm btn-gradient me-2">
+                                    <i class="fas fa-envelope me-1"></i> Send Email
+                                </a>
+                                ${
+                                  buyer.customerId.contactDetails
+                                    ? `
+                                    <a href="tel:${buyer.customerId.contactDetails}" class="btn btn-sm btn-outline-success">
+                                        <i class="fas fa-phone me-1"></i> Call
+                                    </a>
+                                `
+                                    : ""
+                                }
+                            </div>
+                        </div>
+                    </div>
+                `;
+        });
+        container.innerHTML = html;
+      }
+
+      function confirmDelete(propertyId) {
+        propertyToDelete = propertyId;
+        new bootstrap.Modal(document.getElementById("deleteModal")).show();
+      }
+
+      // Delete confirmation handler
+      document
+        .getElementById("confirm-delete-btn")
+        .addEventListener("click", async function () {
+          if (!propertyToDelete) return;
+
+          try {
+            const response = await fetch(
+              `/api/properties/${propertyToDelete}`,
+              {
+                method: "DELETE",
+              }
+            );
+
+            if (response.ok) {
+              alert("Property deleted successfully!");
+              bootstrap.Modal.getInstance(
+                document.getElementById("deleteModal")
+              ).hide();
+              loadSellerProperties(); // Refresh the list
+            } else {
+              const error = await response.json();
+              alert("Error: " + error.error);
+            }
+          } catch (error) {
+            console.error("Error deleting property:", error);
+            alert("Error deleting property. Please try again.");
+          }
+
+          propertyToDelete = null;
+        });
+
+      // Property form submission
+      document
+        .getElementById("property-form")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          const formData = new FormData();
+          formData.append("title", document.getElementById("title").value);
+          formData.append("price", document.getElementById("price").value);
+          formData.append(
+            "description",
+            document.getElementById("description").value
+          );
+          formData.append(
+            "physicalAddress",
+            document.getElementById("physicalAddress").value
+          );
+          formData.append(
+            "latitude",
+            document.getElementById("latitude").value
+          );
+          formData.append(
+            "longitude",
+            document.getElementById("longitude").value
+          );
+          formData.append(
+            "mapAddress",
+            document.getElementById("mapAddress").value
+          );
+
+          const images = document.getElementById("images").files;
+          for (let i = 0; i < images.length; i++) {
+            formData.append("images", images[i]);
+          }
+
+          try {
+            const response = await fetch("/api/properties", {
+              method: "POST",
+              body: formData,
+            });
+
+            if (response.ok) {
+              alert("Property added successfully!");
+              resetForm();
+              loadSellerProperties();
+              showSection("properties");
+            } else {
+              const error = await response.json();
+              alert("Error: " + error.error);
+            }
+          } catch (error) {
+            console.error("Error adding property:", error);
+            alert("Error adding property. Please try again.");
+          }
+        });
+
+      function getCurrentLocation() {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            function (position) {
+              document.getElementById("latitude").value =
+                position.coords.latitude;
+              document.getElementById("longitude").value =
+                position.coords.longitude;
+              alert("Location captured successfully!");
+            },
+            function (error) {
+              alert(
+                "Unable to get your location. Please enter coordinates manually."
+              );
+            }
+          );
+        } else {
+          alert("Geolocation is not supported by this browser.");
+        }
+      }
+
+      function resetForm() {
+        document.getElementById("property-form").reset();
+      }
+
+      async function logout() {
+        try {
+          await fetch("/api/logout", { method: "POST" });
+          window.location.href = "/login";
+        } catch (error) {
+          console.error("Logout error:", error);
+          window.location.href = "/login";
+        }
+      }
+    </script>
+  </body>
+</html>

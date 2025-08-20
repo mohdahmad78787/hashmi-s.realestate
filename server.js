@@ -491,8 +491,14 @@ app.get('/api/user/enquiries', authenticateToken, requireDatabase, async (req, r
 
 // Property search with radius and city filters
 app.get('/api/properties/search', requireDatabase, async (req, res) => {
+    const startTime = Date.now();
     try {
-        console.log('Search request received:', req.query);
+        console.log('=== SEARCH REQUEST START ===');
+        console.log('Request URL:', req.url);
+        console.log('Query params:', req.query);
+        console.log('Headers:', req.headers);
+        console.log('MongoDB connected:', isMongoConnected);
+        
         const { latitude, longitude, radius, city, minPrice, maxPrice } = req.query;
         let query = {};
 
@@ -501,9 +507,11 @@ app.get('/api/properties/search', requireDatabase, async (req, res) => {
             query.price = {};
             if (minPrice && !isNaN(parseFloat(minPrice))) {
                 query.price.$gte = parseFloat(minPrice);
+                console.log('Added min price filter:', parseFloat(minPrice));
             }
             if (maxPrice && !isNaN(parseFloat(maxPrice))) {
                 query.price.$lte = parseFloat(maxPrice);
+                console.log('Added max price filter:', parseFloat(maxPrice));
             }
         }
 
@@ -515,14 +523,23 @@ app.get('/api/properties/search', requireDatabase, async (req, res) => {
                 { physicalAddress: cityRegex },
                 { 'googleMapLocation.address': cityRegex }
             ];
+            console.log('Added city filter for:', city.trim());
         }
 
-        console.log('MongoDB query:', JSON.stringify(query));
-        let properties = await Property.find(query).populate('sellerId', 'name contactDetails email');
-        console.log(`Found ${properties.length} properties before radius filter`);
+        console.log('Final MongoDB query:', JSON.stringify(query, null, 2));
+        
+        let properties;
+        try {
+            properties = await Property.find(query).populate('sellerId', 'name contactDetails email');
+            console.log(`Database query successful: Found ${properties.length} properties`);
+        } catch (dbError) {
+            console.error('Database query failed:', dbError);
+            throw new Error(`Database query failed: ${dbError.message}`);
+        }
 
         // Radius filter (Haversine formula)
         if (latitude && longitude && radius && !isNaN(parseFloat(latitude)) && !isNaN(parseFloat(longitude)) && !isNaN(parseFloat(radius))) {
+            console.log('Applying radius filter:', { latitude, longitude, radius });
             const lat = parseFloat(latitude);
             const lng = parseFloat(longitude);
             const radiusKm = parseFloat(radius);
@@ -543,14 +560,32 @@ app.get('/api/properties/search', requireDatabase, async (req, res) => {
                 }
                 return false;
             });
-            console.log(`Radius filter: ${originalCount} -> ${properties.length} properties`);
+            console.log(`Radius filter applied: ${originalCount} -> ${properties.length} properties`);
         }
 
-        console.log(`Returning ${properties.length} properties`);
+        const duration = Date.now() - startTime;
+        console.log(`Search completed successfully in ${duration}ms: Returning ${properties.length} properties`);
+        console.log('=== SEARCH REQUEST END ===');
+        
         res.json(properties);
     } catch (error) {
-        console.error('Property search error:', error);
-        res.status(500).json({ error: 'Failed to search properties: ' + error.message });
+        const duration = Date.now() - startTime;
+        console.error('=== SEARCH REQUEST FAILED ===');
+        console.error('Error after', duration, 'ms');
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+        console.error('Request details:', {
+            url: req.url,
+            query: req.query,
+            headers: req.headers
+        });
+        console.error('=== END ERROR DETAILS ===');
+        
+        res.status(500).json({ 
+            error: `Search failed: ${error.message}`,
+            details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 });
 

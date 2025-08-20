@@ -769,13 +769,35 @@
           const searchLoading = document.getElementById("search-loading");
           if (searchLoading) searchLoading.style.display = "block";
           
+          console.log('Loading all properties...');
           const response = await fetch("/api/properties");
+          console.log('Properties response status:', response.status);
+          
           if (response.ok) {
             const properties = await response.json();
+            console.log('Loaded', properties.length, 'properties');
             displayProperties(properties);
+          } else {
+            let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+            try {
+              const errorData = await response.json();
+              errorMessage = errorData.error || errorMessage;
+            } catch (parseError) {
+              console.error('Failed to parse error response:', parseError);
+            }
+            console.error('Failed to load properties:', errorMessage);
+            throw new Error(errorMessage);
           }
         } catch (error) {
-          console.error("Error loading properties:", error);
+          console.error("Detailed error loading properties:", {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+          });
+          const container = document.getElementById("properties-container");
+          if (container) {
+            container.innerHTML = `<div class="col-12"><div class="alert alert-danger">Error loading properties: ${error.message}</div></div>`;
+          }
         } finally {
           const searchLoading = document.getElementById("search-loading");
           if (searchLoading) searchLoading.style.display = "none";
@@ -843,9 +865,13 @@
 
           url += params.join("&");
 
+          console.log('Sending search request to:', url);
           const response = await fetch(url);
+          console.log('Search response status:', response.status);
+          
           if (response.ok) {
             const properties = await response.json();
+            console.log('Search returned', properties.length, 'properties');
             displayProperties(properties);
             
             // Show search results info
@@ -854,18 +880,36 @@
             }
             if (searchInfo) searchInfo.style.display = "block";
           } else {
-            const errorData = await response.json();
-            throw new Error(errorData.error || "Search failed");
+            let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+            try {
+              const errorData = await response.json();
+              errorMessage = errorData.error || errorMessage;
+            } catch (parseError) {
+              console.error('Failed to parse error response:', parseError);
+              errorMessage += ' (Failed to parse error details)';
+            }
+            console.error('Search request failed:', errorMessage);
+            throw new Error(errorMessage);
           }
         } catch (error) {
-          console.error("Error searching properties:", error);
+          console.error("Detailed search error:", {
+            message: error.message,
+            stack: error.stack,
+            name: error.name,
+            url: url,
+            searchCriteria: searchCriteria
+          });
           const searchInfo = document.getElementById("search-info");
           const searchInfoText = document.getElementById("search-info-text");
-          if (searchInfoText) searchInfoText.textContent = "Error searching properties: " + error.message;
+          if (searchInfoText) {
+            searchInfoText.textContent = `Search Error: ${error.message}`;
+          }
           if (searchInfo) {
             searchInfo.className = "alert alert-danger";
             searchInfo.style.display = "block";
           }
+          // Also show alert with full error details
+          alert(`Search failed: ${error.message}\n\nCheck browser console for more details.`);
         } finally {
           const searchLoading = document.getElementById("search-loading");
           const searchBtn = document.getElementById("search-btn");

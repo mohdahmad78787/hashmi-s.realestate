@@ -497,13 +497,17 @@ app.get('/api/properties/search', requireDatabase, async (req, res) => {
         // Price range filter
         if (minPrice || maxPrice) {
             query.price = {};
-            if (minPrice) query.price.$gte = parseFloat(minPrice);
-            if (maxPrice) query.price.$lte = parseFloat(maxPrice);
+            if (minPrice && !isNaN(parseFloat(minPrice))) {
+                query.price.$gte = parseFloat(minPrice);
+            }
+            if (maxPrice && !isNaN(parseFloat(maxPrice))) {
+                query.price.$lte = parseFloat(maxPrice);
+            }
         }
 
         // City filter (case-insensitive, partial match in city or physicalAddress)
-        if (city) {
-            const cityRegex = new RegExp(city, 'i');
+        if (city && city.trim()) {
+            const cityRegex = new RegExp(city.trim(), 'i');
             query.$or = [
                 { city: cityRegex },
                 { physicalAddress: cityRegex },
@@ -514,10 +518,11 @@ app.get('/api/properties/search', requireDatabase, async (req, res) => {
         let properties = await Property.find(query).populate('sellerId', 'name contactDetails email');
 
         // Radius filter (Haversine formula)
-        if (latitude && longitude && radius) {
+        if (latitude && longitude && radius && !isNaN(parseFloat(latitude)) && !isNaN(parseFloat(longitude)) && !isNaN(parseFloat(radius))) {
             const lat = parseFloat(latitude);
             const lng = parseFloat(longitude);
             const radiusKm = parseFloat(radius);
+            
             properties = properties.filter(property => {
                 if (
                     property.googleMapLocation &&
@@ -743,8 +748,17 @@ app.post('/api/properties', authenticateToken, requireDatabase, upload.array('im
             return res.status(400).json({ error: imgErr.message });
         }
 
-        // Extract city from address
-        const city = physicalAddress.split(',').pop().trim();
+        // Extract city from address (last part after comma, or use mapAddress if available)
+        let city = '';
+        if (mapAddress && mapAddress.trim()) {
+            // Try to extract city from Google Maps address
+            const addressParts = mapAddress.split(',');
+            city = addressParts.length > 1 ? addressParts[addressParts.length - 2].trim() : addressParts[0].trim();
+        } else {
+            // Fallback to physical address
+            const addressParts = physicalAddress.split(',');
+            city = addressParts.length > 1 ? addressParts[addressParts.length - 1].trim() : physicalAddress.trim();
+        }
 
         const property = new Property({
             title,

@@ -278,6 +278,7 @@
                 class="form-control"
                 id="city-search"
                 placeholder="Enter city name..."
+                onkeypress="if(event.key==='Enter') searchProperties()"
               />
             </div>
             <div class="col-md-2">
@@ -287,6 +288,8 @@
                 class="form-control"
                 id="min-price"
                 placeholder="0"
+                min="0"
+                onkeypress="if(event.key==='Enter') searchProperties()"
               />
             </div>
             <div class="col-md-2">
@@ -296,6 +299,8 @@
                 class="form-control"
                 id="max-price"
                 placeholder="1000000"
+                min="0"
+                onkeypress="if(event.key==='Enter') searchProperties()"
               />
             </div>
             <div class="col-md-2">
@@ -306,6 +311,9 @@
                   class="form-control"
                   id="radius-search"
                   placeholder="10"
+                  min="1"
+                  max="100"
+                  onkeypress="if(event.key==='Enter') searchProperties()"
                 />
                 <span class="input-group-text">km</span>
               </div>
@@ -327,6 +335,7 @@
               <input type="hidden" id="user-longitude" />
               <button
                 class="btn btn-gradient w-100"
+                id="search-btn"
                 onclick="searchProperties()"
               >
                 <i class="fas fa-search me-1"></i> Search Properties
@@ -336,9 +345,15 @@
               <button
                 class="btn btn-outline-secondary w-100"
                 onclick="clearSearch()"
+                type="button"
               >
                 <i class="fas fa-times me-1"></i> Clear Filters
               </button>
+            </div>
+            <div class="col-md-6">
+              <div class="alert alert-info" id="search-info" style="display: none; margin-bottom: 0;">
+                <small><i class="fas fa-info-circle me-1"></i> <span id="search-info-text"></span></small>
+              </div>
             </div>
           </div>
         </div>
@@ -751,7 +766,9 @@
 
       async function loadAllProperties() {
         try {
-          document.getElementById("search-loading").style.display = "block";
+          const searchLoading = document.getElementById("search-loading");
+          if (searchLoading) searchLoading.style.display = "block";
+          
           const response = await fetch("/api/properties");
           if (response.ok) {
             const properties = await response.json();
@@ -760,31 +777,68 @@
         } catch (error) {
           console.error("Error loading properties:", error);
         } finally {
-          document.getElementById("search-loading").style.display = "none";
+          const searchLoading = document.getElementById("search-loading");
+          if (searchLoading) searchLoading.style.display = "none";
         }
       }
 
       async function searchProperties() {
         try {
-          document.getElementById("search-loading").style.display = "block";
+          const searchLoading = document.getElementById("search-loading");
+          const searchBtn = document.getElementById("search-btn");
+          const searchInfo = document.getElementById("search-info");
+          const searchInfoText = document.getElementById("search-info-text");
 
-          const city = document.getElementById("city-search").value;
-          const minPrice = document.getElementById("min-price").value;
-          const maxPrice = document.getElementById("max-price").value;
-          const radius = document.getElementById("radius-search").value;
-          const latitude = document.getElementById("user-latitude").value;
-          const longitude = document.getElementById("user-longitude").value;
+          if (searchLoading) searchLoading.style.display = "block";
+          if (searchBtn) searchBtn.disabled = true;
+          if (searchInfo) searchInfo.style.display = "none";
+
+          const cityInput = document.getElementById("city-search");
+          const minPriceInput = document.getElementById("min-price");
+          const maxPriceInput = document.getElementById("max-price");
+          const radiusInput = document.getElementById("radius-search");
+          const latitudeInput = document.getElementById("user-latitude");
+          const longitudeInput = document.getElementById("user-longitude");
+
+          const city = cityInput ? cityInput.value.trim() : "";
+          const minPrice = minPriceInput ? minPriceInput.value.trim() : "";
+          const maxPrice = maxPriceInput ? maxPriceInput.value.trim() : "";
+          const radius = radiusInput ? radiusInput.value.trim() : "";
+          const latitude = latitudeInput ? latitudeInput.value.trim() : "";
+          const longitude = longitudeInput ? longitudeInput.value.trim() : "";
+
+          // Build search criteria description
+          let searchCriteria = [];
+          if (city) searchCriteria.push(`City: ${city}`);
+          if (minPrice) searchCriteria.push(`Min Price: ₹${parseFloat(minPrice).toLocaleString()}`);
+          if (maxPrice) searchCriteria.push(`Max Price: ₹${parseFloat(maxPrice).toLocaleString()}`);
+          if (latitude && longitude && radius) searchCriteria.push(`Within ${radius}km of your location`);
+
+          // If no search criteria provided, load all properties
+          if (!city && !minPrice && !maxPrice && (!latitude || !longitude || !radius)) {
+            if (searchInfoText) searchInfoText.textContent = "Showing all available properties";
+            if (searchInfo) searchInfo.style.display = "block";
+            await loadAllProperties();
+            return;
+          }
 
           let url = "/api/properties/search?";
           const params = [];
 
           if (city) params.push(`city=${encodeURIComponent(city)}`);
-          if (minPrice) params.push(`minPrice=${minPrice}`);
-          if (maxPrice) params.push(`maxPrice=${maxPrice}`);
-          if (latitude && longitude && radius) {
+          if (minPrice && !isNaN(parseFloat(minPrice))) params.push(`minPrice=${minPrice}`);
+          if (maxPrice && !isNaN(parseFloat(maxPrice))) params.push(`maxPrice=${maxPrice}`);
+          if (latitude && longitude && radius && !isNaN(parseFloat(latitude)) && !isNaN(parseFloat(longitude)) && !isNaN(parseFloat(radius))) {
             params.push(`latitude=${latitude}`);
             params.push(`longitude=${longitude}`);
             params.push(`radius=${radius}`);
+          }
+
+          if (params.length === 0) {
+            if (searchInfoText) searchInfoText.textContent = "Showing all available properties";
+            if (searchInfo) searchInfo.style.display = "block";
+            await loadAllProperties();
+            return;
           }
 
           url += params.join("&");
@@ -793,25 +847,65 @@
           if (response.ok) {
             const properties = await response.json();
             displayProperties(properties);
+            
+            // Show search results info
+            if (searchInfoText) {
+              searchInfoText.textContent = `Found ${properties.length} properties matching: ${searchCriteria.join(', ')}`;
+            }
+            if (searchInfo) searchInfo.style.display = "block";
           } else {
-            throw new Error("Search failed");
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Search failed");
           }
         } catch (error) {
           console.error("Error searching properties:", error);
-          alert("Error searching properties. Please try again.");
+          const searchInfo = document.getElementById("search-info");
+          const searchInfoText = document.getElementById("search-info-text");
+          if (searchInfoText) searchInfoText.textContent = "Error searching properties: " + error.message;
+          if (searchInfo) {
+            searchInfo.className = "alert alert-danger";
+            searchInfo.style.display = "block";
+          }
         } finally {
-          document.getElementById("search-loading").style.display = "none";
+          const searchLoading = document.getElementById("search-loading");
+          const searchBtn = document.getElementById("search-btn");
+          if (searchLoading) searchLoading.style.display = "none";
+          if (searchBtn) searchBtn.disabled = false;
         }
       }
 
-      function clearSearch() {
-        document.getElementById("city-search").value = "";
-        document.getElementById("min-price").value = "";
-        document.getElementById("max-price").value = "";
-        document.getElementById("radius-search").value = "";
-        document.getElementById("user-latitude").value = "";
-        document.getElementById("user-longitude").value = "";
-        loadAllProperties();
+      async function clearSearch() {
+        const cityInput = document.getElementById("city-search");
+        const minPriceInput = document.getElementById("min-price");
+        const maxPriceInput = document.getElementById("max-price");
+        const radiusInput = document.getElementById("radius-search");
+        const latitudeInput = document.getElementById("user-latitude");
+        const longitudeInput = document.getElementById("user-longitude");
+        const searchInfo = document.getElementById("search-info");
+        const searchInfoText = document.getElementById("search-info-text");
+
+        if (cityInput) cityInput.value = "";
+        if (minPriceInput) minPriceInput.value = "";
+        if (maxPriceInput) maxPriceInput.value = "";
+        if (radiusInput) radiusInput.value = "";
+        if (latitudeInput) latitudeInput.value = "";
+        if (longitudeInput) longitudeInput.value = "";
+        
+        if (searchInfo) {
+          searchInfo.style.display = "none";
+          searchInfo.className = "alert alert-info";
+        }
+        if (searchInfoText) {
+          searchInfoText.textContent = "";
+        }
+        
+        await loadAllProperties();
+        
+        // Show info that all properties are displayed
+        if (searchInfoText && searchInfo) {
+          searchInfoText.textContent = "Showing all available properties";
+          searchInfo.style.display = "block";
+        }
       }
 
       function getCurrentLocation() {

@@ -855,7 +855,9 @@
                             }" class="card-img-top" style="height: 200px; object-fit: cover;" alt="Property Image">
                             <div class="card-body">
                                 <h6 class="card-title">${property.title}</h6>
-                                <p class="card-text text-success fw-bold">₹${property.price.toLocaleString()}</p>
+                                <p class="card-text text-success fw-bold">₹${Number(
+                                  property.price
+                                ).toLocaleString("en-IN")}</p>
                                 <p class="card-text">${property.description.substring(
                                   0,
                                   100
@@ -939,7 +941,9 @@
                 ${imagesHtml}
                 <div class="row">
                     <div class="col-md-6">
-                        <h5 class="text-success">₹${property.price.toLocaleString()}</h5>
+                        <h5 class="text-success">₹${Number(
+                          property.price
+                        ).toLocaleString("en-IN")}</h5>
                         <p><i class="fas fa-map-marker-alt me-2"></i>${
                           property.physicalAddress
                         }</p>

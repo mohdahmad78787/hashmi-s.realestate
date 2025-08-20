@@ -492,38 +492,38 @@ app.get('/api/user/enquiries', authenticateToken, requireDatabase, async (req, r
 app.get('/api/properties/search', requireDatabase, async (req, res) => {
     try {
         const { latitude, longitude, radius, city, minPrice, maxPrice } = req.query;
-        
         let query = {};
-        
+
         // Price range filter
         if (minPrice || maxPrice) {
             query.price = {};
             if (minPrice) query.price.$gte = parseFloat(minPrice);
             if (maxPrice) query.price.$lte = parseFloat(maxPrice);
         }
-        
-        // City filter
+
+        // City filter (case-insensitive, partial match in city or physicalAddress)
         if (city) {
+            const cityRegex = new RegExp(city, 'i');
             query.$or = [
-                { city: new RegExp(city, 'i') },
-                { physicalAddress: new RegExp(city, 'i') },
-                { 'googleMapLocation.address': new RegExp(city, 'i') }
+                { city: cityRegex },
+                { physicalAddress: cityRegex },
+                { 'googleMapLocation.address': cityRegex }
             ];
         }
-        
-        let properties = await Property.find(query).populate('sellerId', 'name contactDetails');
-        
-        // Radius filter
+
+        let properties = await Property.find(query).populate('sellerId', 'name contactDetails email');
+
+        // Radius filter (Haversine formula)
         if (latitude && longitude && radius) {
             const lat = parseFloat(latitude);
             const lng = parseFloat(longitude);
             const radiusKm = parseFloat(radius);
-            
             properties = properties.filter(property => {
-                if (property.googleMapLocation && 
-                    property.googleMapLocation.latitude && 
-                    property.googleMapLocation.longitude) {
-                    
+                if (
+                    property.googleMapLocation &&
+                    typeof property.googleMapLocation.latitude === 'number' &&
+                    typeof property.googleMapLocation.longitude === 'number'
+                ) {
                     const distance = calculateDistance(
                         lat, lng,
                         property.googleMapLocation.latitude,
@@ -534,7 +534,7 @@ app.get('/api/properties/search', requireDatabase, async (req, res) => {
                 return false;
             });
         }
-        
+
         res.json(properties);
     } catch (error) {
         console.error('Property search error:', error);

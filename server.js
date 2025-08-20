@@ -34,12 +34,13 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(express.static('public'));
-app.use('/uploads', express.static('uploads'));
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Create uploads directory if it doesn't exist
-if (!fs.existsSync('uploads')) {
-    fs.mkdirSync('uploads', { recursive: true });
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
 // MongoDB connection tracking
@@ -141,7 +142,7 @@ const Property = mongoose.model('Property', propertySchema);
 // File upload configuration
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, 'uploads/');
+        cb(null, path.join(__dirname, 'uploads'));
     },
     filename: function (req, file, cb) {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -491,6 +492,7 @@ app.get('/api/user/enquiries', authenticateToken, requireDatabase, async (req, r
 // Property search with radius and city filters
 app.get('/api/properties/search', requireDatabase, async (req, res) => {
     try {
+        console.log('Search request received:', req.query);
         const { latitude, longitude, radius, city, minPrice, maxPrice } = req.query;
         let query = {};
 
@@ -515,7 +517,9 @@ app.get('/api/properties/search', requireDatabase, async (req, res) => {
             ];
         }
 
+        console.log('MongoDB query:', JSON.stringify(query));
         let properties = await Property.find(query).populate('sellerId', 'name contactDetails email');
+        console.log(`Found ${properties.length} properties before radius filter`);
 
         // Radius filter (Haversine formula)
         if (latitude && longitude && radius && !isNaN(parseFloat(latitude)) && !isNaN(parseFloat(longitude)) && !isNaN(parseFloat(radius))) {
@@ -523,6 +527,7 @@ app.get('/api/properties/search', requireDatabase, async (req, res) => {
             const lng = parseFloat(longitude);
             const radiusKm = parseFloat(radius);
             
+            const originalCount = properties.length;
             properties = properties.filter(property => {
                 if (
                     property.googleMapLocation &&
@@ -538,12 +543,14 @@ app.get('/api/properties/search', requireDatabase, async (req, res) => {
                 }
                 return false;
             });
+            console.log(`Radius filter: ${originalCount} -> ${properties.length} properties`);
         }
 
+        console.log(`Returning ${properties.length} properties`);
         res.json(properties);
     } catch (error) {
         console.error('Property search error:', error);
-        res.status(500).json({ error: 'Failed to search properties' });
+        res.status(500).json({ error: 'Failed to search properties: ' + error.message });
     }
 });
 
@@ -724,7 +731,8 @@ app.post('/api/properties', authenticateToken, requireDatabase, upload.array('im
 
         // Process uploaded images
         const imagePromises = req.files.map(async (file) => {
-            const processedPath = `uploads/processed-${file.filename}`;
+            const processedPath = path.join(__dirname, 'uploads', `processed-${file.filename}`);
+            const relativePath = `uploads/processed-${file.filename}`;
             try {
                 await sharp(file.path)
                     .resize(800, 600, { fit: 'cover' })
@@ -732,12 +740,12 @@ app.post('/api/properties', authenticateToken, requireDatabase, upload.array('im
                     .toFile(processedPath);
             } catch (err) {
                 // Remove the problematic file
-                fs.unlinkSync(file.path);
+                if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
                 throw new Error(`Image processing failed for ${file.originalname}: ${err.message}`);
             }
             // Delete original file
-            fs.unlinkSync(file.path);
-            return processedPath;
+            if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+            return relativePath;
         });
 
         let images;
@@ -786,13 +794,15 @@ app.post('/api/properties', authenticateToken, requireDatabase, upload.array('im
 
 app.get('/api/properties', requireDatabase, async (req, res) => {
     try {
+        console.log('Fetching all properties...');
         const properties = await Property.find()
             .populate('sellerId', 'name contactDetails')
             .sort({ createdAt: -1 });
+        console.log(`Found ${properties.length} total properties`);
         res.json(properties);
     } catch (error) {
         console.error('Get properties error:', error);
-        res.status(500).json({ error: 'Failed to fetch properties' });
+        res.status(500).json({ error: 'Failed to fetch properties: ' + error.message });
     }
 });
 
@@ -828,8 +838,9 @@ app.delete('/api/properties/:id', authenticateToken, requireDatabase, async (req
 
         // Delete associated images
         property.images.forEach(imagePath => {
-            if (fs.existsSync(imagePath)) {
-                fs.unlinkSync(imagePath);
+            const fullPath = path.isAbsolute(imagePath) ? imagePath : path.join(__dirname, imagePath);
+            if (fs.existsSync(fullPath)) {
+                fs.unlinkSync(fullPath);
             }
         });
 

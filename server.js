@@ -697,27 +697,52 @@ app.put('/api/admin/change-password', authenticateToken, requireDatabase, async 
 // Property routes
 app.post('/api/properties', authenticateToken, requireDatabase, upload.array('images', 10), async (req, res) => {
     try {
+        // Render's default body size limit is 32MB. If you need more, set it in the Render dashboard.
         if (req.user.role !== 'seller') {
             return res.status(403).json({ error: 'Access denied' });
         }
 
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ error: 'No images uploaded. Please select at least one image.' });
+        }
+
+        // Validate each file before processing
+        for (const file of req.files) {
+            if (!file.size || file.size === 0) {
+                // Remove the empty file
+                fs.unlinkSync(file.path);
+                return res.status(400).json({ error: `One of the uploaded files is empty or corrupted. Please try again with valid images.` });
+            }
+        }
+
         const { title, description, price, physicalAddress, latitude, longitude, mapAddress } = req.body;
-        
+
         // Process uploaded images
         const imagePromises = req.files.map(async (file) => {
             const processedPath = `uploads/processed-${file.filename}`;
-            await sharp(file.path)
-                .resize(800, 600, { fit: 'cover' })
-                .jpeg({ quality: 80 })
-                .toFile(processedPath);
-            
+            try {
+                await sharp(file.path)
+                    .resize(800, 600, { fit: 'cover' })
+                    .jpeg({ quality: 80 })
+                    .toFile(processedPath);
+            } catch (err) {
+                // Remove the problematic file
+                fs.unlinkSync(file.path);
+                throw new Error(`Image processing failed for ${file.originalname}: ${err.message}`);
+            }
             // Delete original file
             fs.unlinkSync(file.path);
             return processedPath;
         });
 
-        const images = await Promise.all(imagePromises);
-        
+        let images;
+        try {
+            images = await Promise.all(imagePromises);
+        } catch (imgErr) {
+            console.error('Image processing error:', imgErr);
+            return res.status(400).json({ error: imgErr.message });
+        }
+
         // Extract city from address
         const city = physicalAddress.split(',').pop().trim();
 
@@ -741,7 +766,7 @@ app.post('/api/properties', authenticateToken, requireDatabase, upload.array('im
         res.json({ message: 'Property created successfully', property });
     } catch (error) {
         console.error('Create property error:', error);
-        res.status(500).json({ error: 'Failed to create property' });
+        res.status(500).json({ error: error.message || 'Failed to create property' });
     }
 });
 
